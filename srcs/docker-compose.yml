@@ -1,0 +1,69 @@
+version: "3.9"
+
+volumes:
+        db:
+                driver: local
+                name: db
+                driver_opts:
+                        type: none
+                        o: bind
+                        device: /home/jkate/srcs/requirements/mariadb
+        wordpress:
+                driver: local
+                name: wordpress
+                driver_opts:
+                        type: none
+                        o: bind
+                        device: /home/jkate/srcs/requirements/wordpress
+
+services:
+        nginx:
+                image: nginx:latest
+                build: ./requirements/nginx
+                container_name: nginx
+                ports:
+                        - "443:443"
+                links:
+                        - wordpress
+                volumes:
+                        - /home/jkate/srcs/requirements/nginx:/var/www/html
+                networks:
+                        - basic_network
+
+        db:
+                image: mariadb:latest
+                build: ./requirements/mariadb
+                container_name: mariadb
+                restart: always
+                env_file: .env
+                ports:
+                        - "3306:3306"
+                volumes:
+                        - /home/jkate/srcs/requirements/mariadb:/etc/mysql
+                networks:
+                        - basic_network
+
+        wordpress:
+                image: wordpress:latest
+                build: ./requirements/wordpress
+                container_name: wordpress
+                restart: always
+                env_file: .env
+                links:
+                        - db 
+                volumes:
+                        - /home/jkate/srcs/requirements/wordpress/volume:/var/www/html
+                ports:
+                        - "9000:9000"
+                networks:
+                        basic_network:
+                                ipv4_address: 172.16.238.10
+networks: 
+        basic_network:
+                driver: bridge
+                ipam:
+                        driver: default
+                        config:
+                                - subnet: 172.16.238.0/24
+                                  gateway: 172.16.238.1
+
